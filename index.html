@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>TV Remote</title>
+  <script src="https://unpkg.com/vue"></script>
+	<link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-black">
+	<div id='app'>
+		<div class="inline-flex justify-center flex-col p-12 w-full">
+			<div v-if='info !== null' class="flex justify-between items-end mb-8 text-center text-white px-4" style="font-size: 4rem;">
+				<div class="inline-flex flex-col">
+					<div>{{ info.powerstate }}</div>
+					<button @click="sendKey('standby')" class="bg-white text-black py-2 px-4 rounded-lg">
+						Power
+					</button>
+				</div>
+				<button @click="sendKey('confirm')" class="bg-white text-black w-32 h-32 rounded-lg">
+					Ok
+				</button>
+			</div>
+
+			<div v-if='error !== null' @click='error = null' class="flex justify-between my-8 text-center px-4" style="font-size: 4rem; color: #E50914">
+				{{ error }}
+			</div>
+
+			<div 
+				v-for='scenario in scenarios.sort()' 
+				@click="runScenario(scenario)"
+				style="height: 30rem;" 
+				class="flex relative mt-8" 
+			>
+        <img v-if='logo[scenario]' class="absolute inset-0 w-full h-full object-cover border-2 border-gray-700 rounded-2xl" :src="logo[scenario]">
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+new Vue({
+	el: "#app",
+	data() {
+		return {
+			logo: {
+				netflix: 'https://i.imgur.com/ByohYqd.png',
+				spotify: 'https://i.imgur.com/7GGwixi.png',
+				plex: 'https://i.imgur.com/hGN1B9x.png'
+			},
+			error: null,
+			info: null,
+		  scenarios: [],
+		}
+	},
+	async mounted() {
+		await this.fetchScenarios();
+		await this.fetchInfos();
+	},
+	methods: {
+	  async fetchInfos() {
+	    try {
+	    	this.info = await fetch('/info').then((r) => r.json());
+	    } catch (e) {
+	    	console.log(e.message)
+	    	this.error = e.message
+	    }
+	  },
+	  async fetchScenarios() {
+	    try {
+	    	this.scenarios = await fetch('/scenario').then((r) => r.json());
+	    } catch (e) {
+	    	console.log(e.message)
+	    	this.error = e.message
+	    }
+	  },
+	  async runScenario(scenario) {
+	    try {
+	    	await fetch(`/scenario/${scenario}`).then((r) => r.ok);
+	    	await this.fetchInfos();
+	    } catch (e) {
+	    	console.log(e.message)
+	    	this.error = e.message
+	    }
+	  },
+	  async sendKey(key) {
+	    try {
+	    	await fetch(`/key/${key}`).then((r) => r.ok);
+    		await this.fetchInfos();
+	    } catch (e) {
+	    	console.log(e.message)
+	    	this.error = e.message
+	    }
+	  },
+	}
+});
+</script>
+</html>
